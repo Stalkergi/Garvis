@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Mini Jarvis (web)</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <button id="start">Говорю</button>
+  <p id="text"></p>
+  <div id="circle"></div>
+  <div id="console"></div>
+
+  <script>
+    const btn = document.getElementById('start');
+    const out = document.getElementById('text');
+
+    // список голосов
+    let voices = [];
+
+    // обновляем список голосов, когда они подгрузятся
+    window.speechSynthesis.onvoiceschanged = () => {
+      voices = speechSynthesis.getVoices();
+      console.log("Голоса загружены:", voices);
+    };
+
+    function speak(t) {
+      if (!t) return;
+      const s = new SpeechSynthesisUtterance(t);
+      s.lang = 'ru-RU';
+
+      // ищем русский голос
+      let v = voices.find(v => v.lang.startsWith('ru'));
+      if (v) s.voice = v;
+
+      // чтобы не застревало
+      speechSynthesis.cancel();
+      speechSynthesis.speak(s);
+
+      log("Jarvis: " + t);
+    }
+
+    function log(msg) {
+      const c = document.getElementById('console');
+      c.innerHTML += msg + '<br>';
+      c.scrollTop = c.scrollHeight;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      out.textContent = 'Ваш браузер не поддерживает распознавание речи.';
+    }
+    const recog = new SpeechRecognition();
+    recog.lang = 'ru-RU';
+    recog.interimResults = false;
+
+    recog.onresult = (e) => {
+      const text = e.results[0][0].transcript.toLowerCase();
+      out.textContent = 'Вы сказали: ' + text;
+      log("Вы: " + text);
+
+      if (text.includes('открой сайт')) {
+        speak('Открываю сайт');
+        window.open('https://google.com', '_blank');
+      } else if (text.includes('как дела')) {
+        speak('Всё отлично, спасибо!');
+      } else if (text.includes('кто твой создатель')) {
+        speak('Вы сэр Саидов Баходир');
+      } else if (text.includes('открой youtube')) {
+        speak('Открываю YouTube');
+        window.open('https://youtube.com', '_blank');
+      } else if (text.includes('привет джарвис')) {
+        speak('Привет! Рад тебя слышать');
+      } else if (text.includes('который час')) {
+        let time = new Date().toLocaleTimeString();
+        speak('Сейчас ' + time);
+      } else {
+        speak('Я не понял, повтори пожалуйста');
+      }
+    };
+
+    btn.onclick = () => {
+      try {
+        recog.start();
+        speak('Слушаю');
+      } catch (e) {
+        console.error(e);
+      }
+    };
+  </script>
+</body>
+</html>
